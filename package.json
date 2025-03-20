@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "@supercharge/promise-pool": "^3.2.0",
+    "axios": "^1.8.4",
+    "bchaddrjs": "^0.5.2",
+    "bitcoinjs-lib": "^6.1.7",
+    "body-parser": "^1.20.3",
+    "electrum-client": "^0.0.6",
+    "hyper-express": "^6.17.3",
+    "ioredis": "^5.6.0",
+    "tiny-secp256k1": "^2.2.3"
+  }
+}
