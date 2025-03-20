@@ -9,5 +9,8 @@
     "hyper-express": "^6.17.3",
     "ioredis": "^5.6.0",
     "tiny-secp256k1": "^2.2.3"
+  },
+  "scripts": {
+    "start": "node app.js"
   }
 }
