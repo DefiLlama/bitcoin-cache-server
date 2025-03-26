@@ -89,6 +89,13 @@ async function pullFromAllium(addresses) {
     addressResponseMap[addr.address] = addr.value * 1e8
   })
 
+  addresses.forEach(addr => {
+    if (!addressResponseMap[addr]) {
+      // console.log('missing', addr)
+      addressResponseMap[addr] = 0
+    }
+  })
+
   console.log(new Date().toISOString(), 'allium res', addresses.length, btcSum)
   return addressResponseMap
 }
