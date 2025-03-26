@@ -22,9 +22,9 @@ const ONE_HOUR = 3600;
 
 function getTtl(balance) {
   if (balance > 1e9) {
-    return ONE_HOUR * 3
+    return ONE_HOUR
   } else if (balance > 1e8) {
-    return ONE_HOUR * 7
+    return ONE_HOUR * 4
   } else if (balance > 1e6) {
     return ONE_HOUR * 13;
   } else {

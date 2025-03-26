@@ -83,10 +83,13 @@ async function pullFromAllium(addresses) {
   const res = await queryAllium(query(addresses))
 
   const addressResponseMap = {}
+  let btcSum = 0
   res.forEach(addr => {
-    addressResponseMap[addr.address] = addr.value
+    btcSum += +addr.value
+    addressResponseMap[addr.address] = addr.value * 1e8
   })
 
+  console.log('allium res', addresses.length, btcSum)
   return addressResponseMap
 }
 
