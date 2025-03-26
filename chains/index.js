@@ -125,7 +125,7 @@ async function getBalances2({ network, addresses, combined = true }) {
   const allMissingAddresses = [];
   const missingAddressesChunks = [];
   const chunkSize = 500;
-  const missingChunkSize = 999;
+  const missingChunkSize = 99;
   let resNumber = 0
   let resObject = {}
 
