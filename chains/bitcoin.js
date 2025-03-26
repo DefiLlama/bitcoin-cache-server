@@ -2,7 +2,8 @@ const ElectrumClient = require('electrum-client');
 const bitcoin = require('bitcoinjs-lib');
 const ecc = require('tiny-secp256k1');
 const axios = require('axios');
-const { PromisePool } = require('@supercharge/promise-pool')
+const { PromisePool } = require('@supercharge/promise-pool');
+const { pullFromAllium } = require('./allium');
 bitcoin.initEccLib(ecc);
 
 // https://1209k.com/bitcoin-eye/ele.php
@@ -294,13 +295,21 @@ async function init() {
 
 async function pullFromBlockchainInfo(addresses) {
 
-  const query = addrs => 'https://blockchain.info/multiaddr?active=' + addrs.join('|')
-  const { data } = await axios.get(query(addresses))
-  const addressResponseMap = {}
-  data.addresses.forEach(addr => {
-    addressResponseMap[addr.address] = addr.final_balance
-  })
-  return addressResponseMap
+  if (addresses.length > 30)
+    return pullFromAllium(addresses)
+
+  try {
+
+    const query = addrs => 'https://blockchain.info/multiaddr?active=' + addrs.join('|')
+    const { data } = await axios.get(query(addresses))
+    const addressResponseMap = {}
+    data.addresses.forEach(addr => {
+      addressResponseMap[addr.address] = addr.final_balance
+    })
+    return addressResponseMap
+  } catch (error) {
+    return pullFromAllium(addresses)
+  }
 }
 
 function addressToScripthash(address) {

@@ -18,15 +18,17 @@ async function init() {
   await Promise.all(initFns)
 }
 
+const ONE_HOUR = 3600;
+
 function getTtl(balance) {
   if (balance > 1e9) {
-    return 3600; // 1 hour
+    return ONE_HOUR * 3
   } else if (balance > 1e8) {
-    return 3600 * 4; // 4 hour
+    return ONE_HOUR * 7
   } else if (balance > 1e6) {
-    return 3600 * 8; // 8 hours
+    return ONE_HOUR * 13;
   } else {
-    return 3600 * 44; // 24 hours
+    return ONE_HOUR * 44
   }
 }
 
@@ -150,7 +152,7 @@ async function getBalances2({ network, addresses, combined = true }) {
   for (const chunk of missingAddressesChunks) {
     const balances = await _getBalances(chunk);
     if (missingAddressesChunks.length > 5)
-      await sleep(3000)
+      await sleep(1000)
     if (combined) {
       resNumber = Object.values(balances).filter(balance => !isNaN(balance)).reduce((a, b) => a + +b, resNumber);
     } else {
