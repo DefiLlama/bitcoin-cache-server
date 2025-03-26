@@ -74,6 +74,7 @@ async function queryAllium(sqlQuery) {
 
 
 async function pullFromAllium(addresses) {
+  const startTime = new Date().getTime()
 
   const query = addrs => `
     SELECT address, balance as value from bitcoin.assets.balances_latest  
@@ -89,14 +90,18 @@ async function pullFromAllium(addresses) {
     addressResponseMap[addr.address] = addr.value * 1e8
   })
 
+  let missingCounter = 0
   addresses.forEach(addr => {
     if (!addressResponseMap[addr]) {
       // console.log('missing', addr)
+      missingCounter++
       addressResponseMap[addr] = 0
     }
   })
 
-  console.log(new Date().toISOString(), 'allium res', addresses.length, btcSum)
+  const timeTaken = new Date().getTime() - startTime
+
+  console.log(new Date().toISOString(), 'allium', { addrCount: addresses.length, btcSum, missingCounter, timeTaken: Number(timeTaken / 1000).toFixed(2) })
   return addressResponseMap
 }
 
