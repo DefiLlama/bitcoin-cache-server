@@ -167,7 +167,7 @@ async function getBalances2({ network, addresses, combined = true }) {
 
   async function _getBalancesRedis(addrs) {
     const client = getRedisConnection();
-    const cachedBalances = await client.mget(addresses);
+    const cachedBalances = await client.mget(addrs);
     const missingAddresses = [];
     const balances = {}
     cachedBalances.forEach((balance, index) => {
