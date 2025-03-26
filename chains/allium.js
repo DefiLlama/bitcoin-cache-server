@@ -89,7 +89,7 @@ async function pullFromAllium(addresses) {
     addressResponseMap[addr.address] = addr.value * 1e8
   })
 
-  console.log('allium res', addresses.length, btcSum)
+  console.log(new Date().toISOString(), 'allium res', addresses.length, btcSum)
   return addressResponseMap
 }
 
