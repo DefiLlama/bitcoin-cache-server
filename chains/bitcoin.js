@@ -306,6 +306,10 @@ async function pullFromBlockchainInfo(addresses) {
     data.addresses.forEach(addr => {
       addressResponseMap[addr.address] = addr.final_balance
     })
+    addresses.forEach(addr => {
+      if (!addressResponseMap[addr])
+        addressResponseMap[addr] = 0
+    })
     return addressResponseMap
   } catch (error) {
     return pullFromAllium(addresses)
