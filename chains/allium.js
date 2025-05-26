@@ -15,7 +15,8 @@ async function startAlliumQuery(sqlQuery) {
       fullQuery: sqlQuery
     }
   }, {
-    headers: HEADERS
+    headers: HEADERS,
+    timeout: 1000 * 60 * 10 // 10 minutes timeout
   })
 
   return run_id

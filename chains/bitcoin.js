@@ -303,7 +303,7 @@ async function pullFromBlockchainInfo(addresses, noAllium = false) {
       const chunks = sliceIntoChunks(addresses, 90)
       const addressResponseMap = {}
       for (const chunk of chunks) {
-        const response = await pullFromAllium(chunk, true)
+        const response = await pullFromBlockchainInfo(chunk, true)
         if (chunks.length > 3)
           await sleep(30000)
         Object.assign(addressResponseMap, response)
