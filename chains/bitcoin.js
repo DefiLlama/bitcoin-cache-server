@@ -293,15 +293,29 @@ async function init() {
   console.log('Bitcoin: working electrum clients', eClients.length)
 }
 
-async function pullFromBlockchainInfo(addresses) {
+async function pullFromBlockchainInfo(addresses, noAllium = false) {
 
-  if (addresses.length > 30)
-    return pullFromAllium(addresses)
+  if (addresses.length > 30 && !noAllium) {
+    try {
+      const response = await pullFromAllium(addresses)
+      return response
+    } catch (error) {
+      const chunks = sliceIntoChunks(addresses, 90)
+      const addressResponseMap = {}
+      for (const chunk of chunks) {
+        const response = await pullFromAllium(chunk, true)
+        if (chunks.length > 3)
+          await sleep(30000)
+        Object.assign(addressResponseMap, response)
+      }
+      return addressResponseMap
+    }
+  }
 
   try {
 
     const query = addrs => 'https://blockchain.info/multiaddr?active=' + addrs.join('|')
-    const { data } = await axios.get(query(addresses))
+    const { data } = await axios.get(query(addresses), { timeout: 20 * 60 * 1000 })
     const addressResponseMap = {}
     data.addresses.forEach(addr => {
       addressResponseMap[addr.address] = addr.final_balance
@@ -328,4 +342,8 @@ module.exports = {
   eClients,
   addressToScripthash,
   pullFromBlockchainInfo,
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

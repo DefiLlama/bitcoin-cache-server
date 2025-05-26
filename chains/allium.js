@@ -1,5 +1,6 @@
 const axios = require('axios')
 const retry = require('async-retry')
+const { elastic } = require('@defillama/sdk')
 
 const token = {}
 
@@ -30,6 +31,28 @@ async function retrieveAlliumResults(queryId, sqlQuery, timeoutId) {
 }
 
 async function queryAllium(sqlQuery) {
+  let startTime = +Date.now() / 1e3
+  const metadata = {
+    application: "allium",
+    query: 'bitcoin-cache',
+    table: 'bitcoin-cache',
+  }
+  success = false
+
+  try {
+    const response = await _queryAllium(sqlQuery);
+    success = true
+    let endTime = +Date.now() / 1e3
+    await elastic.addRuntimeLog({ runtime: endTime - startTime, success, metadata, })
+    return response
+  } catch (e) {
+    await elastic.addRuntimeLog({ runtime: endTime - startTime, success, metadata, })
+    await elastic.addErrorLog({ error: (e?.toString()), metadata, })
+    throw e
+  }
+}
+
+async function _queryAllium(sqlQuery) {
 
   const timeoutId = setTimeout(() => {
     delete token[sqlQuery]
@@ -66,7 +89,7 @@ async function queryAllium(sqlQuery) {
     },
     {
       retries: 20,
-      maxTimeout: 1000 * 60 * 5
+      maxTimeout: 1000 * 60 * 30
     }
   );
 }
