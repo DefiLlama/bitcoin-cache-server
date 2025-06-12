@@ -117,7 +117,7 @@ async function getBalances({ network, addresses, combined = true }) {
 }
 
 
-async function getBalances2({ network, addresses, combined = true }) {
+async function getBalances2({ network, addresses, combined = true, skipCacheRead = false }) {
   if (network !== 'BTC') throw new Error('Unsupported network. Supported networks: BTC')
   const client = getRedisConnection();
 
@@ -134,7 +134,7 @@ async function getBalances2({ network, addresses, combined = true }) {
   }
 
   for (const chunk of chunks) {
-    const { balances, missingAddresses } = await _getBalancesRedis(chunk);
+    const { balances, missingAddresses } = skipCacheRead ? { balances: {}, missingAddresses: chunk } : await _getBalancesRedis(chunk);
     allMissingAddresses.push(...missingAddresses);
     if (combined) {
       resNumber = Object.values(balances).filter(balance => !isNaN(balance)).reduce((a, b) => a + +b, resNumber);
@@ -150,7 +150,7 @@ async function getBalances2({ network, addresses, combined = true }) {
   }
 
   for (const chunk of missingAddressesChunks) {
-    const balances = await _getBalances(chunk);
+    const balances = await _getBalancesAndStoreInDB(chunk);
     if (missingAddressesChunks.length > 5)
       await sleep(1000)
     if (combined) {
@@ -180,15 +180,19 @@ async function getBalances2({ network, addresses, combined = true }) {
     return { balances, missingAddresses }
   }
 
-  async function _getBalances(addrs) {
-    const balances = await bitcoin.pullFromBlockchainInfo(addrs);
-    const redisActions = []
-    Object.entries(balances).forEach(([address, balance]) => {
-      redisActions.push(['setex', address, getTtl(+balance), balance]);
-    })
+  async function _getBalancesAndStoreInDB(addrs) {
+    const storeFunction = async (addressMap) => {
+      const redisActions = []
+      Object.entries(addressMap).forEach(([address, balance]) => {
+        redisActions.push(['setex', address, getTtl(+balance), balance]);
+      })
 
-    if (redisActions.length > 0)
-      await client.multi(redisActions).exec();
+      if (redisActions.length > 0)
+        await client.multi(redisActions).exec();
+    }
+
+
+    const balances = await bitcoin.pullFromBlockchainInfo(addrs, storeFunction)
     return balances
   }
 }

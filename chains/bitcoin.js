@@ -293,42 +293,60 @@ async function init() {
   console.log('Bitcoin: working electrum clients', eClients.length)
 }
 
-async function pullFromBlockchainInfo(addresses, noAllium = false) {
+async function pullFromBlockchainInfo(addresses, storeFunction = () => { }) {
 
-  if (addresses.length > 30 && !noAllium) {
+  const chunks = sliceIntoChunks(addresses, 90)
+  let failureCount = 0
+  const addressResponseMap = {}
+  let triedAllium = true
+
+  for (const chunk of chunks) {
     try {
-      const response = await pullFromAllium(addresses)
-      return response
-    } catch (error) {
-      const chunks = sliceIntoChunks(addresses, 90)
-      const addressResponseMap = {}
-      for (const chunk of chunks) {
-        const response = await pullFromBlockchainInfo(chunk, true)
-        if (chunks.length > 3)
-          await sleep(30000)
-        Object.assign(addressResponseMap, response)
+      let response
+      if (addresses.length > 30 && failureCount < 3) {
+        response = await pullFromAllium(chunk)
+      } else {
+        triedAllium = false
+        response = await _pullFromBlockchainInfo(chunk)
       }
-      return addressResponseMap
+      Object.assign(addressResponseMap, response)
+      await storeFunction(response)
+
+
+    } catch (error) {
+
+      failureCount++
+      let response
+
+      if (failureCount < 3 && !triedAllium) 
+        response = await pullFromAllium(chunk)  // we try Allium if there is an error
+      else
+        response = await _pullFromBlockchainInfo(chunk)  // we try Blockchain.info one more time
+
+      Object.assign(addressResponseMap, response)
+      await storeFunction(response)
     }
+
+    if (chunks.length > 3) await sleep(3000) // sleep for 3 seconds between chunks to avoid rate limiting
   }
 
-  try {
-
-    const query = addrs => 'https://blockchain.info/multiaddr?active=' + addrs.join('|')
-    const { data } = await axios.get(query(addresses), { timeout: 20 * 60 * 1000 })
-    const addressResponseMap = {}
-    data.addresses.forEach(addr => {
-      addressResponseMap[addr.address] = addr.final_balance
-    })
-    addresses.forEach(addr => {
-      if (!addressResponseMap[addr])
-        addressResponseMap[addr] = 0
-    })
-    return addressResponseMap
-  } catch (error) {
-    return pullFromAllium(addresses)
-  }
+  return addressResponseMap
 }
+
+async function _pullFromBlockchainInfo(addresses) {
+  const query = addrs => 'https://blockchain.info/multiaddr?active=' + addrs.join('|')
+  const { data } = await axios.get(query(addresses), { timeout: 20 * 60 * 1000 })
+  const addressResponseMap = {}
+  data.addresses.forEach(addr => {
+    addressResponseMap[addr.address] = addr.final_balance
+  })
+  addresses.forEach(addr => {
+    if (!addressResponseMap[addr])
+      addressResponseMap[addr] = 0
+  })
+  return addressResponseMap
+}
+
 
 function addressToScripthash(address) {
   const script = bitcoin.address.toOutputScript(address);
@@ -346,4 +364,15 @@ module.exports = {
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+
+
+function sliceIntoChunks(arr, chunkSize = 100) {
+  const res = [];
+  for (let i = 0; i < arr.length; i += chunkSize) {
+    const chunk = arr.slice(i, i + chunkSize);
+    res.push(chunk);
+  }
+  return res;
 }

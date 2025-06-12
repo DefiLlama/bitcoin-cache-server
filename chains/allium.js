@@ -31,12 +31,13 @@ async function retrieveAlliumResults(queryId, sqlQuery, timeoutId) {
   return data
 }
 
-async function queryAllium(sqlQuery) {
+async function queryAllium(sqlQuery, addresses) {
   let startTime = +Date.now() / 1e3
   const metadata = {
     application: "allium",
     query: 'bitcoin-cache',
     table: 'bitcoin-cache',
+    addressCount: addresses?.length || 0,
   }
   success = false
 
@@ -89,8 +90,10 @@ async function _queryAllium(sqlQuery) {
       throw new Error("Still running")
     },
     {
-      retries: 20,
-      maxTimeout: 1000 * 60 * 30
+      retries: 13,
+      maxTimeout: 1000 * 60, // 1 minute
+      minTimeout: 2000, // 2 seconds
+      randomize: true,
     }
   );
 }
@@ -105,7 +108,7 @@ async function pullFromAllium(addresses) {
       WHERE address in (
       '${addrs.join("', '")}'
       )`
-  const res = await queryAllium(query(addresses))
+  const res = await queryAllium(query(addresses, addresses.length))
 
   const addressResponseMap = {}
   let btcSum = 0

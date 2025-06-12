@@ -56,13 +56,13 @@ main()
 
 function setRoutes(router) {
   router.post('/get-balance', async (req, res) => {
-    const { addresses, network, combined = true } = await req.json()
+    const { addresses, network, combined = true, skipCacheRead = false, } = await req.json()
 
-    if (!Array.isArray(addresses) || typeof network !== 'string' || typeof combined !== 'boolean') {
+    if (!Array.isArray(addresses) || typeof network !== 'string' || typeof combined !== 'boolean' || typeof skipCacheRead !== 'boolean') {
       return res.status(400).send('Invalid input');
     }
 
-    const response = await getBalances({ addresses, network, combined });
+    const response = await getBalances({ addresses, network, combined, skipCacheRead });
     res.json(response)
   });
 }
